@@ -280,11 +280,27 @@ end
 
 
 
-function ENT:OnRemove()
-    if IsValid(self.deckPot) then self.deckPot:Remove() end
-    if IsValid(self.dealer) then self.dealer:Remove() end
-
-    hook.Remove("HUDPaint", "gpoker_hudPaint" .. self:EntIndex())
+function ENT:OnRemove(fullUpdate)
+	-- Fixes issue where record x; stop would prevent the HUD from showing up
+	-- and cause the deck/dealer chip to teleport to the map origin
+	if fullUpdate then
+		timer.Simple( 0, function()
+			if IsValid(self.deckPot) then
+				self.deckPot:SetParent(self)
+				self.deckPot:SetLocalPos(self.deckPot:GetLocalPos())
+				self.deckPot:SetLocalAngles(self.deckPot:GetLocalAngles())
+			end
+			if IsValid(self.dealer) then
+				self.dealer:SetParent(self)
+				self.dealer:SetLocalPos(self.dealer:GetLocalPos())
+				self.dealer:SetLocalAngles(self.dealer:GetLocalAngles())
+			end
+		end )
+	else
+		if IsValid(self.deckPot) then self.deckPot:Remove() end
+		if IsValid(self.dealer) then self.dealer:Remove() end
+		hook.Remove("HUDPaint", "gpoker_hudPaint" .. self:EntIndex())
+	end
 end
 
 
