@@ -24,7 +24,7 @@ function ENT:Draw()
             if self:GetGameState() == 0 and timer.Exists("gpoker_intermission" .. self:EntIndex()) then 
                 text = math.floor(timer.TimeLeft("gpoker_intermission" .. self:EntIndex())) + 1
             else
-                text = self:GetPot() .. gPoker.betType[self:GetBetType()].fix
+                text = gPoker.betType[self:GetBetType()].fix .. self:GetPot() 
             end
 
             cam.Start3D2D(self.deckPot:GetPos() + self.deckPot:GetUp() * 15, ang, 0.2)
@@ -57,7 +57,7 @@ function ENT:Draw()
                 local key = self:getPlayerKey(ent)
                 local margin = 5
                 local nick
-                if ent:IsPlayer() then nick = ent:Nick() else nick = "[BOT] " .. ent:GetBotName() end
+                if ent:IsPlayer() then nick = ent:Nick() else nick = "PLACEHOLDER" end
                 local fontW, fontH = surface.GetTextSize(nick)
                 local bgW, bgH = math.Clamp(fontW, 85, 1000) + margin * 2, fontH + margin * 2
         
@@ -77,7 +77,7 @@ function ENT:Draw()
                         state = "Fold"
                         stateClr = Color(225,225,225,255)
                     else
-                        state = gPoker.betType[self:GetBetType()].get(ent) .. gPoker.betType[self:GetBetType()].fix
+                        state = gPoker.betType[self:GetBetType()].fix .. gPoker.betType[self:GetBetType()].get(ent)
                     end
                 
                     local _, btmTxtH = surface.GetTextSize(state)
@@ -149,10 +149,10 @@ function ENT:Initialize()
                 draw.SimpleText(plyHeader, "gpoker_bold", x - bW / 2 + pad, y - bH / 2 + fontH + pad + 15, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
                 draw.SimpleText("(" .. #self.players .. "/" .. self:GetMaxPlayers() .. ")", "gpoker_text", x - bW / 2 + pad + plyW, y - bH / 2 + fontH + pad + 15, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
                 draw.SimpleText(entryHeader, "gpoker_bold", x - bW / 2 + pad, y - bH / 2 + fontH * 2 + pad + 15, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-                draw.SimpleText(self:GetEntryBet() .. gPoker.betType[self:GetBetType()].fix, "gpoker_text", x - bW / 2 + pad + entryW, y - bH / 2 + fontH * 2 + pad + 15, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+                draw.SimpleText(gPoker.betType[self:GetBetType()].fix .. self:GetEntryBet(), "gpoker_text", x - bW / 2 + pad + entryW, y - bH / 2 + fontH * 2 + pad + 15, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
                 if gPoker.betType[self:GetBetType()].canSet then
                     draw.SimpleText(startHeader, "gpoker_bold", x - bW / 2 + pad, y - bH / 2 + fontH * 3 + pad + 15, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-                    draw.SimpleText(self:GetStartValue() .. gPoker.betType[self:GetBetType()].fix, "gpoker_text", x - bW / 2 + pad + startW, y - bH / 2 + fontH * 3 + pad + 15, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+                    draw.SimpleText(gPoker.betType[self:GetBetType()].fix .. self:GetStartValue() , "gpoker_text", x - bW / 2 + pad + startW, y - bH / 2 + fontH * 3 + pad + 15, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
                 end
 
                 local canJoin = true
@@ -161,8 +161,12 @@ function ENT:Initialize()
                 end
             
                 local text = "Press [" .. string.upper(input.LookupBinding("+use")) .. "] to join."
-                if !canJoin then text = "Cannot join - already in a match." end
-                if #self.players >= self:GetMaxPlayers() and (!self:GetBotsPlaceholder()) then text = "Cannot join - match full" end
+                if !canJoin then 
+                    text = "Cannot join - already in a match." 
+                end
+                if #self.players >= self:GetMaxPlayers() then 
+                    text = "Cannot join - match full" 
+                end
                 draw.SimpleText(text, "gpoker_bold", x, y + bH / 2 - pad, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
             end
         end
@@ -235,13 +239,13 @@ function ENT:Initialize()
                 local outset = 12
 
 
-                draw.SimpleText(gPoker.betType[self:GetBetType()].get(LocalPlayer()) .. gPoker.betType[self:GetBetType()].fix, "gpoker_header", ScrW()/2 + width/2 + sideW/2, ScrH() - height + outset + 5, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+                draw.SimpleText(gPoker.betType[self:GetBetType()].fix .. gPoker.betType[self:GetBetType()].get(LocalPlayer()), "gpoker_header", ScrW()/2 + width/2 + sideW/2, ScrH() - height + outset + 5, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
                 draw.SimpleText(bet, "gpoker_bold", ScrW()/2 + width/2 + 5, ScrH() - height + outset + headH + 2, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-                draw.SimpleText(self:GetBet() .. gPoker.betType[self:GetBetType()].fix, "gpoker_text", ScrW()/2 + width/2 + 5 + betW, ScrH() - height + outset + headH + 2, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+                draw.SimpleText(gPoker.betType[self:GetBetType()].fix .. self:GetBet() , "gpoker_text", ScrW()/2 + width/2 + 5 + betW, ScrH() - height + outset + headH + 2, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
                 draw.SimpleText(pot, "gpoker_bold", ScrW()/2 + width/2 + 5, ScrH() - height + outset + headH + boldH + 2, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-                draw.SimpleText(self:GetPot() .. gPoker.betType[self:GetBetType()].fix, "gpoker_text", ScrW()/2 + width/2 + 5 + potW, ScrH() - height + outset + headH + boldH + 2, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+                draw.SimpleText(gPoker.betType[self:GetBetType()].fix .. self:GetPot(), "gpoker_text", ScrW()/2 + width/2 + 5 + potW, ScrH() - height + outset + headH + boldH + 2, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
                 -- draw.SimpleText(string.FormattedTime(CurTime() - self.matchStartTime, "%02i:%02i"), "gpoker_bold", ScrW()/2 + width/2 + sideW/2, ScrH() - 2, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
             end
@@ -315,7 +319,6 @@ function ENT:openEntryFeeDerma()
 
 
 
-
     local pay = vgui.Create("DButton", win)
     pay:SetSize(w/2, h - 20)
     pay:SetPos(2, 20)
@@ -335,7 +338,6 @@ function ENT:openEntryFeeDerma()
     end
     pay.DoClick = function()
         net.Start("gpoker_payEntry", false)
-            net.WriteEntity(self)
             net.WriteBool(true)
         net.SendToServer()
         win:Close()
@@ -344,9 +346,9 @@ function ENT:openEntryFeeDerma()
     local payVal = vgui.Create("DLabel", pay)
     payVal:SetFont("gpoker_bold")
     payVal:SetTextColor(color_white)
-    payVal:SetText("(" .. self:GetEntryBet() .. gPoker.betType[self:GetBetType()].fix .. ")")
+    payVal:SetText("(" .. gPoker.betType[self:GetBetType()].fix .. self:GetEntryBet() .. ")")
     surface.SetFont("gpoker_bold")
-    local textW, _ = surface.GetTextSize("(" .. self:GetEntryBet() .. gPoker.betType[self:GetBetType()].fix .. ")")
+    local textW, _ = surface.GetTextSize("(" .. gPoker.betType[self:GetBetType()].fix .. self:GetEntryBet() .. ")")
     
     payVal:SetPos(pay:GetWide()/2 - textW/2, pay:GetTall()/2 + 10)
 
@@ -371,7 +373,6 @@ function ENT:openEntryFeeDerma()
     end
     leave.DoClick = function()
         net.Start("gpoker_payEntry", false)
-            net.WriteEntity(self)
             net.WriteBool(false)
         net.SendToServer()
         win:Close()
@@ -433,7 +434,6 @@ function ENT:openBettingDerma(check, curbet)
         end
         check.DoClick = function()
             net.Start("gpoker_derma_bettingActions", false)
-                net.WriteEntity(self)
                 net.WriteUInt(0, 3)
             net.SendToServer()
             win:Remove()
@@ -496,7 +496,6 @@ function ENT:openBettingDerma(check, curbet)
                 local val = math.floor(betAmount:GetValue())
 
                 net.Start("gpoker_derma_bettingActions", false)
-                    net.WriteEntity(self)
                     net.WriteUInt(1, 3)
                     net.WriteFloat(val)
                 net.SendToServer()
@@ -551,7 +550,6 @@ function ENT:openBettingDerma(check, curbet)
         end
         call.DoClick = function()
             net.Start("gpoker_derma_bettingActions", false)
-                net.WriteEntity(self)
                 net.WriteUInt(2, 3)
             net.SendToServer()
             win:Remove()
@@ -560,9 +558,9 @@ function ENT:openBettingDerma(check, curbet)
         local callVal = vgui.Create("DLabel", call)
         callVal:SetFont("gpoker_bold")
         callVal:SetTextColor(color_white)
-        callVal:SetText("(" .. curbet - self.players[self:getPlayerKey(LocalPlayer())].paidBet .. gPoker.betType[self:GetBetType()].fix .. ")")
+        callVal:SetText("(" .. gPoker.betType[self:GetBetType()].fix .. curbet - self.players[self:getPlayerKey(LocalPlayer())].paidBet .. ")")
         surface.SetFont("gpoker_bold")
-        local textW, _ = surface.GetTextSize("(" .. curbet - self.players[self:getPlayerKey(LocalPlayer())].paidBet .. gPoker.betType[self:GetBetType()].fix .. ")")
+        local textW, _ = surface.GetTextSize("(" .. gPoker.betType[self:GetBetType()].fix .. curbet - self.players[self:getPlayerKey(LocalPlayer())].paidBet .. ")")
         
         callVal:SetPos(call:GetWide()/2 - textW/2, call:GetTall()/2 + 10)
 
@@ -586,7 +584,6 @@ function ENT:openBettingDerma(check, curbet)
         end
         fold.DoClick = function()
             net.Start("gpoker_derma_bettingActions", false)
-                net.WriteEntity(self)
                 net.WriteUInt(4, 3)
             net.SendToServer()
             win:Remove()
@@ -649,7 +646,6 @@ function ENT:openBettingDerma(check, curbet)
                 local val = math.floor(raiseAmount:GetValue())
 
                 net.Start("gpoker_derma_bettingActions", false)
-                    net.WriteEntity(self)
                     net.WriteUInt(1, 3)
                     net.WriteFloat(val)
                 net.SendToServer()
@@ -783,7 +779,6 @@ function ENT:openExchangeDerma()
     end
     button.DoClick = function()
         net.Start("gpoker_derma_exchange", false)
-            net.WriteEntity(self)
             net.WriteTable(mark)
         net.SendToServer()
         win:Remove()
@@ -846,7 +841,6 @@ function ENT:openLeaveRequest()
         if !IsValid(self) then return end
         
         net.Start("gpoker_derma_leaveRequest")
-            net.WriteEntity(self)
         net.SendToServer()
     end
 

@@ -6,15 +6,15 @@ util.AddNetworkString("gpoker_derma_bettingActions")
 util.AddNetworkString("gpoker_derma_exchange")
 util.AddNetworkString("gpoker_derma_leaveRequest")
 
+net.Receive("gpoker_derma_createGame", function(l, ply)
+    if (not ply or not IsValid(ply)) then 
+        return 
+    end
 
-
-net.Receive("gpoker_derma_createGame", function(l, p)
-    if !IsValid(p) then return end
-
-    local tr = p:GetEyeTraceNoCursor()
+    local tr = ply:GetEyeTraceNoCursor()
     local pos = tr.HitPos + tr.HitNormal * 10
-    local ang = p:EyeAngles()
-    ang.p = 0
+    local ang = ply:EyeAngles()
+    ang.ply = 0
     ang.y = ang.y + 180
 
     local options = net.ReadTable()
@@ -22,13 +22,12 @@ net.Receive("gpoker_derma_createGame", function(l, p)
     local poker = ents.Create("ent_poker_game")
     poker:SetPos(pos)
     poker:SetAngles(ang)
-    poker.botsInfo = options.bot.list
     poker:Spawn()
     poker:Activate()
 
     undo.Create("GPoker Table")
         undo.AddEntity(poker)
-        undo.SetPlayer(p)
+        undo.SetPlayer(ply)
     undo.Finish()   
 
     poker:SetGameType(options.game.type)
@@ -37,18 +36,26 @@ net.Receive("gpoker_derma_createGame", function(l, p)
     poker:SetBetType(options.bet.type)
     poker:SetEntryBet(options.bet.entry)
     poker:SetStartValue(options.bet.start)
-
-    poker:SetBotsPlaceholder(options.bot.placehold)
-    poker:SetBots(#options.bot.list)
 end)
 
 
 
 net.Receive("gpoker_payEntry", function(_, ply)
-    local ent = net.ReadEntity()
+    local ent = gPoker.getTableFromPlayer(ply)
     local paid = net.ReadBool()
 
-    if !IsValid(ent) then return end
+    if (not ent or not IsValid(ent)) then 
+        return 
+    end
+
+    if (gPoker.betType[ent:GetBetType()].canJoin and not gPoker.betType[ent:GetBetType()].canJoin(ply,ent)) then
+        if (DarkRP) then
+            DarkRP.notify(ply, 1, 4, "You do not have enough money for the entry fee!")
+        else
+            ply:PrintMessage(HUD_PRINTTALK, "You do not have enough money for the entry fee!")
+        end
+        paid = false
+    end
 
     if paid then
         gPoker.betType[ent:GetBetType()].add(ply, -ent:GetEntryBet(), ent)
@@ -73,72 +80,77 @@ end)
 
 
 
-net.Receive("gpoker_derma_bettingActions", function(l, p)
-    local s = net.ReadEntity()
-    if !IsValid(s) then return end
-    if s:GetGameState() < 1 then return end
+net.Receive("gpoker_derma_bettingActions", function(l, ply)
+    local poker_tbl = gPoker.getTableFromPlayer(ply)
+    if (not poker_tbl or not IsValid(poker_tbl)) then 
+        return 
+    end
+
+    if (poker_tbl:GetGameState() < 1) then 
+        return 
+    end
 
     local choice = net.ReadUInt(3)
     local val = net.ReadFloat()
-    local k = s:getPlayerKey(p)
+    local k = poker_tbl:getPlayerKey(ply)
 
     if choice == 0 then
-        sound.Play("gpoker/check.wav", s:GetPos())
+        sound.Play("gpoker/check.wav", poker_tbl:GetPos())
     elseif choice == 1 then
-        gPoker.betType[s:GetBetType()].add(p, -val, s)
-        s:SetCheck(false)
-        s:SetBet(val)
-        s.players[k].paidBet = val
+        gPoker.betType[poker_tbl:GetBetType()].add(ply, -val, poker_tbl)
+        poker_tbl:SetCheck(false)
+        poker_tbl:SetBet(val)
+        poker_tbl.players[k].paidBet = val
 
-        for k,v in pairs(s.players) do
+        for k,v in pairs(poker_tbl.players) do
             if not v.fold then
                 v.ready = false
             end
         end
 
-        sound.Play("mvm/mvm_money_pickup.wav", s:GetPos())
+        sound.Play("mvm/mvm_money_pickup.wav", poker_tbl:GetPos())
     elseif choice == 2 then
-        gPoker.betType[s:GetBetType()].add(p, -(s:GetBet() - s.players[k].paidBet), s)
-        s.players[k].paidBet = s:GetBet()
+        gPoker.betType[poker_tbl:GetBetType()].add(ply, -(poker_tbl:GetBet() - poker_tbl.players[k].paidBet), poker_tbl)
+        poker_tbl.players[k].paidBet = poker_tbl:GetBet()
 
-        sound.Play("mvm/mvm_money_pickup.wav", s:GetPos())
+        sound.Play("mvm/mvm_money_pickup.wav", poker_tbl:GetPos())
     elseif choice == 3 then
-        gPoker.betType[s:GetBetType()].add(p, -val, s)
-        s.players[k].paidBet = val
+        gPoker.betType[poker_tbl:GetBetType()].add(ply, -val, poker_tbl)
+        poker_tbl.players[k].paidBet = val
 
-        for k,v in pairs(s.players) do
+        for k,v in pairs(poker_tbl.players) do
             if not v.fold then
                 v.ready = false
             end
         end
 
-        s:SetBet(val)
+        poker_tbl:SetBet(val)
 
-        sound.Play("mvm/mvm_money_pickup.wav", s:GetPos())
+        sound.Play("mvm/mvm_money_pickup.wav", poker_tbl:GetPos())
     elseif choice == 4 then
-        s.players[k].fold = true
+        poker_tbl.players[k].fold = true
     end
 
-    s.players[k].ready = true
+    poker_tbl.players[k].ready = true
 
-    s:updatePlayersTable()
+    poker_tbl:updatePlayersTable()
 
     timer.Simple(0.2, function()
-        if !IsValid(s) then return end
+        if !IsValid(poker_tbl) then return end
         
-        s:proceed() 
+        poker_tbl:proceed() 
     end)
 end)
 
 
 
-net.Receive("gpoker_derma_exchange", function(l,p)
-    local s = net.ReadEntity()
+net.Receive("gpoker_derma_exchange", function(l,ply)
+    local poker_tbl = gPoker.getTableFromPlayer(ply)
     local cards = net.ReadTable()
 
-    if !IsValid(s) then return end
+    if !IsValid(poker_tbl) then return end
 
-    local plyKey = s:getPlayerKey(p)
+    local plyKey = poker_tbl:getPlayerKey(ply)
     local selectCards = {}
 
     for k,v in ipairs(cards) do
@@ -149,40 +161,42 @@ net.Receive("gpoker_derma_exchange", function(l,p)
         local oldCards = {}
 
         for k,v in pairs(selectCards) do
-            oldCards[s.decks[plyKey][v].suit] = s.decks[plyKey][v].rank
+            oldCards[poker_tbl.decks[plyKey][v].suit] = poker_tbl.decks[plyKey][v].rank
 
-            s:dealSingularCard(plyKey, v)
+            poker_tbl:dealSingularCard(plyKey, v)
         end
 
         for k,v in pairs(oldCards) do
-            s.deck[k][v] = true
+            poker_tbl.deck[k][v] = true
         end
 
         net.Start("gpoker_sendDeck")
-            net.WriteEntity(s)
-            net.WriteTable(s.decks[s:getPlayerKey(p)])
-        net.Send(Entity(s.players[s:getPlayerKey(p)].ind))
+            net.WriteEntity(poker_tbl)
+            net.WriteTable(poker_tbl.decks[poker_tbl:getPlayerKey(ply)])
+        net.Send(Entity(poker_tbl.players[poker_tbl:getPlayerKey(ply)].ind))
 
-        sound.Play("gpoker/cardthrow.wav", s:GetPos())
+        sound.Play("gpoker/cardthrow.wav", poker_tbl:GetPos())
     end
 
-    s.players[plyKey].ready = true
+    poker_tbl.players[plyKey].ready = true
 
-    s:updatePlayersTable()
-    s:proceed()
+    poker_tbl:updatePlayersTable()
+    poker_tbl:proceed()
 end)
 
 
 
 net.Receive("gpoker_derma_leaveRequest", function(l, ply)
-    local poker = net.ReadEntity()
+    local poker = gPoker.getTableFromPlayer(ply)
     poker:removePlayerFromMatch(ply)
 end)
 
 
 
 hook.Add("CanProperty", "gpoker_blockSkinChange", function(ply, property, ent)
-    if ent:GetClass() == "ent_poker_card" then return false end
+    if ent:GetClass() == "ent_poker_card" then 
+        return false 
+    end
 end)
 
 hook.Add("PlayerDisconnected", "gpoker_playerDisconnected", function(ply)
@@ -205,16 +219,20 @@ hook.Add("EntityTakeDamage", "gpoker_nullifyPlayerDamage", function(attacked, dm
     end
 end)
 
-hook.Add("CanPlayerSuicide", "gpoker_disableKillBind", function(ply)
-    if ply:InVehicle() and IsValid(ply:GetVehicle():GetParent()) and ply:GetVehicle():GetParent():GetClass() == "ent_poker_game" then
-        return false 
+hook.Add("PlayerChangedTeam","gpoker_plyChangedTeam",function(ply)
+    local gpoker_tbl = gPoker.getTableFromPlayer(ply)
+    if (gpoker_tbl and IsValid(gpoker_tbl)) then
+        if (DarkRP) then
+            DarkRP.notify(ply, 1, 4, "You have left the poker table.")
+        else
+            ply:PrintMessage(HUD_PRINTTALK, "You have left the poker table.")
+        end
+        gpoker_tbl:removePlayerFromMatch(ply)
     end
 end)
 
-hook.Add("CanPlayerEnterVehicle", "gpoker_disallowSittingOnBotSeats", function(ply, veh, role)
-    if !table.IsEmpty(veh:GetChildren()) then
-        for k,v in pairs(veh:GetChildren()) do
-            if v:GetClass() == "ent_poker_bot" then return false end
-        end
+hook.Add("CanPlayerSuicide", "gpoker_disableKillBind", function(ply)
+    if ply:InVehicle() and IsValid(ply:GetVehicle():GetParent()) and ply:GetVehicle():GetParent():GetClass() == "ent_poker_game" then
+        return false
     end
 end)

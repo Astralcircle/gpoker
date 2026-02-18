@@ -1,6 +1,6 @@
-gPoker = {}
+gPoker = gPoker or {}
 
-gPoker.model = Model("")
+-- gPoker.model = Model("") // Why does this exist??
 
 //Poker games
 
@@ -43,7 +43,7 @@ gPoker.gameType = {
                     if !IsValid(win) then return end
 
                     local t
-                    if win:IsPlayer() then t = win:Nick() else t = win:GetBotName() end
+                    if win:IsPlayer() then t = win:Nick() else t = "PLACEHOLDER" end
                     t =  t .. " has: "
 
                     if e.players[e:GetWinner()].strength and e.players[e:GetWinner()].value then
@@ -66,7 +66,7 @@ gPoker.gameType = {
                     if !IsValid(win) then return "Winner: " end
 
                     local t = "Winner: "
-                    if win:IsPlayer() then t = t .. win:Nick() else t = t .. win:GetBotName() end
+                    if win:IsPlayer() then t = t .. win:Nick() else t = t .. "PLACEHOLDER" end
                     t = t .. ", " .. gPoker.fancyDeckStrength(e.players[e:GetWinner()].strength, e.players[e:GetWinner()].value)
 
                     return t
@@ -127,7 +127,7 @@ gPoker.gameType = {
                     if !IsValid(win) then return end
 
                     local t
-                    if win:IsPlayer() then t = win:Nick() else t = win:GetBotName() end
+                    if win:IsPlayer() then t = win:Nick() else t = "PLACEHOLDER" end
                     t =  t .. " has: "
 
                     if e.players[e:GetWinner()].strength and e.players[e:GetWinner()].value then
@@ -150,7 +150,7 @@ gPoker.gameType = {
                     if !IsValid(win) then return "Winner: " end
 
                     local t = "Winner: "
-                    if win:IsPlayer() then t = t .. win:Nick() else t = t .. win:GetBotName() end
+                    if win:IsPlayer() then t = t .. win:Nick() else t = t .. "PLACEHOLDER" end
                     t = t .. ", " .. gPoker.fancyDeckStrength(e.players[e:GetWinner()].strength, e.players[e:GetWinner()].value)
 
                     return t
@@ -164,61 +164,68 @@ gPoker.gameType = {
 //Poker bets
 gPoker.betType = {
     [0] = {
-        name        = "Money",                              --Name
-        fix         = "$",                                  --Text after value
-        canSet      = engine.ActiveGamemode() != "darkrp",  --Can players set the amount of value each player gets in the spawn derma?
-        setMinMax   = {min = 0, max = 10000},                --The minimum and maximum number of starting value (if uses)
+        name        = "Money",                  --Name
+        fix         = "£",                      --Text after value
+        canSet      = false,               --Can players set the amount of value each player gets in the spawn derma?
+        setMinMax   = {min = 0, max = 10000},   --The minimum and maximum number of starting value (if uses)
+        canJoin     = function(ply,table)       --Can the player join the table?
+            if (not DarkRP) then
+                return true
+            end
+            local balance = ply:getDarkRPVar("money")
+            local min = table:GetEntryBet() or 0
+            
+            return balance >= min
+        end,
+        payin       = function(ply, table)
+            local balance = ply:getDarkRPVar("money")
+            local min = table:GetEntryBet() or 0
+
+            if balance < min then
+                return false, "You don't have enough money to join this table!"
+            end
+
+            ply:addMoney(-min)
+        end,
+        payout      = function(ply, amount)
+            ply:addMoney(amount)
+        end,
         feeMinMax   = {min = 0, max = function(setSlider) 
             if CLIENT then 
-                if engine.ActiveGamemode() != "darkrp" then 
-                    return setSlider:GetValue() 
-                else 
-                    return LocalPlayer():getDarkRPVar("money") 
-                end 
+                return setSlider:GetValue() 
             end
         end}, --The minimum and maximum of entry fee
-        get         = function(p)                           --Method for getting specified player's value
-            if !IsValid(p) then return end
-
-            local isDarkRp = engine.ActiveGamemode() == "darkrp"
-
-            if !isDarkRp or (isDarkRp and !p:IsPlayer()) then
-                local e = gPoker.getTableFromPlayer(p)
-
-                local key = e:getPlayerKey(p)
-                if key == nil then return end
-
-                return e.players[key].money
-            else
-                return p:getDarkRPVar("money")
+        get = function(ply)                           --Method for getting specified player's value
+            if (not ply or not IsValid(ply)) then 
+                return 
             end
+            
+            local pokerTbl = gPoker.getTableFromPlayer(ply)
+
+            local key = pokerTbl:getPlayerKey(ply)
+            if key == nil then return end
+
+            return pokerTbl.players[key].money
         end,
-        add         = function(p, a, e)                        --Method for adding or subtracting the value
-            if CLIENT then return end
-            if !IsValid(p) then return end
-
-
-            local isDarkRp = engine.ActiveGamemode() == "darkrp"
+        add = function(ply, a, ent)                        --Method for adding or subtracting the value
+            if CLIENT then 
+                return 
+            end
+            if (not ply or not IsValid(ply)) then 
+                return 
+            end
             a = a or 0
 
-            if !isDarkRp or (isDarkRp and !p:IsPlayer()) then 
-                local key = e:getPlayerKey(p)
-                if key == nil then return end
+            local key = ent:getPlayerKey(ply)
+            if key == nil then return end
 
-                e.players[key].money = e.players[key].money + a
-                e:updatePlayersTable()
-            else
-                p:addMoney(a)
-            end
+            ent.players[key].money = ent.players[key].money + a
+            ent:updatePlayersTable()
 
-            e:SetPot(e:GetPot() - a)
+            ent:SetPot(e:GetPot() - a)
         end,
-        call = function(s, p) --Called after player joins, mostly used for setting up custom value
-            if !(engine.ActiveGamemode() == "darkrp") then
-                s.players[s:getPlayerKey(p)].money = s:GetStartValue()
-            elseif !p:IsPlayer() then
-                s.players[s:getPlayerKey(p)].money = math.random(100,1000)
-            end
+        call = function(poker_tbl, ply) --Called after player joins, mostly used for setting up custom value
+            poker_tbl.players[poker_tbl:getPlayerKey(ply)].money = poker_tbl:GetStartValue()
         end,
         models      = {  --The spinning model at the center
             [1] = {
@@ -238,48 +245,47 @@ gPoker.betType = {
             }
         }
     },
-
     [1] = {
         name        = "Health",
         fix         = "HP",
         canSet      = false,
         setMinMax   = {min = 0, max = 0},
         feeMinMax   = {min = 0, max = function() if CLIENT then return LocalPlayer():GetMaxHealth() end end},
-        get         = function(p)
-            if p:IsPlayer() then
-                return p:Health()
+        get         = function(ply)
+            if ply:IsPlayer() then
+                return ply:Health()
             else
-                local ent = gPoker.getTableFromPlayer(p)
+                local ent = gPoker.getTableFromPlayer(ply)
 
                 if !IsValid(ent) then return 0 end
 
-                local key = ent:getPlayerKey(p)
+                local key = ent:getPlayerKey(ply)
                 return ent.players[key].health
             end
         end,
-        add         = function(p, a, e)
+        add         = function(ply, a, e)
             if CLIENT then return end
-            if !IsValid(p) then return end
+            if !IsValid(ply) then return end
             
             a = a or 0
 
-            local hp = gPoker.betType[e:GetBetType()].get(p) + a
+            local hp = gPoker.betType[e:GetBetType()].get(ply) + a
             
             if hp < 1 then 
-                e:removePlayerFromMatch(p)
-                if p:IsPlayer() then p:Kill() end
+                e:removePlayerFromMatch(ply)
+                if ply:IsPlayer() then ply:Kill() end
             else
-                if p:IsPlayer() then p:SetHealth(hp) else 
-                    e.players[e:getPlayerKey(p)].health = hp 
+                if ply:IsPlayer() then ply:SetHealth(hp) else 
+                    e.players[e:getPlayerKey(ply)].health = hp 
                     e:updatePlayersTable() 
                 end
             end
 
             e:SetPot(e:GetPot() - a)
         end,
-        call = function(s, p)
-            if !p:IsPlayer() then
-                s.players[s:getPlayerKey(p)].health = 100 + math.random(0,150) --Add a little randomziation ;)
+        call = function(poker_tbl, ply)
+            if !ply:IsPlayer() then
+                poker_tbl.players[poker_tbl:getPlayerKey(ply)].health = 100 + math.random(0,150) --Add a little randomziation ;)
             end
         end,
         models      = {
@@ -297,18 +303,20 @@ gPoker.betType = {
     }
 }
 
-
-
 //Cards materials, for hud
-gPoker.cards = {}
 
-for s = 0, 3 do
-    gPoker.cards[s] = {}
+if (not gPoker.cards) then
+    gPoker.cards = {}
 
-    for r = 0, 12 do
-        gPoker.cards[s][r] = Material("gpoker/cards/" .. s .. r .. ".png")
+    for poker_tbl = 0, 3 do
+        gPoker.cards[poker_tbl] = {}
+
+        for r = 0, 12 do
+            gPoker.cards[poker_tbl][r] = Material("gpoker/cards/" .. poker_tbl .. r .. ".png")
+        end
     end
 end
+
 
 gPoker.suit = {
     [0] = "Club",
@@ -316,6 +324,7 @@ gPoker.suit = {
     [2] = "Heart",
     [3] = "Spade"
 }
+
 
 gPoker.rank = {
     [0] = "Two",
@@ -333,6 +342,7 @@ gPoker.rank = {
     [12] = "Ace"
 }
 
+
 gPoker.strength = {
     [0] = "High Card",
     [1] = "Pair",
@@ -346,33 +356,19 @@ gPoker.strength = {
     [9] = "Royal Flush"
 }
 
-//Bots section//
-
-gPoker.bots = {}
-
-//Lots of references
-gPoker.bots.names = {"Æ", "The Shark", "Multiplier", "The Ripper", "Big Boss", "Christ", "The Dude", "White", "Freeman", "Alpha", "Jetstream", "Beta", "Approaching Storm", "Afton", "Gamma", "White Wolf", "Narrator", "Rookie", "Snake Eater", "Mars", "Tea Sniffer", "Dango", "Folder", "Scarlet Devil", "Beep Boop", "Karen Slayer", "The Beach", "Silent", "May", "August", "Player", "Sol", "Risker", "Miller", "Slayer of Doom", "Doom", "Finger", /*v1.0.3*/ "Minge", "anonymous", "ByzrK", "Trickster", "Dummy", "Cthulhu", "Deadweight", "Quiet", "V1", "V2", "Deez", "Nuts", "Shalashaska", "Liquid", "Bandit", "Monkey", "Bloon", "Red", "La Li Lu Le Lo", "Impending Doom", "Engineer", "Gwent Expert", "GPoker sucks", "Bug", "Red Saber", "CUtIRBTree Overflow!", "Stack Overflow", "JC"}
-
-//Global Functions//
+//Functions//
 
 //Finds the table player is playing at
-function gPoker.getTableFromPlayer(p)
-    if !IsValid(p) then return end
+function gPoker.getTableFromPlayer(ply)
+    if (not ply or not IsValid(ply)) then return end
 
-    local tables = ents.FindByClass("ent_poker_game")
-
-    if !table.IsEmpty(tables) then
-        for k,v in pairs(tables) do
-            local key = v:getPlayerKey(p)
-
-            if key != nil then return v end
-        end
+    local ent = ply:GetNWEntity("gpoker_table")
+    if (not ent or not IsValid(ent) or not ent.IsGPokerTable) then 
+        return nil
     end
 
-    return nil
+    return ent
 end
-
-
 
 //Returns a fancy formatted string of deck strength
 function gPoker.fancyDeckStrength(st,vl)
