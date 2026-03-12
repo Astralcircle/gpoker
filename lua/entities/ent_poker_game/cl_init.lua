@@ -14,14 +14,14 @@ function ENT:Draw()
     if IsValid(self.deckPot) then
         if self:GetGameState() > -1 then
             local ang = EyeAngles()
-            ang.p = 0 
+            ang.p = 0
             ang.r = 0
 
             ang:RotateAroundAxis(ang:Up(), -90)
             ang:RotateAroundAxis(ang:Forward(), 90)
 
             local text = ""
-            if self:GetGameState() == 0 and timer.Exists("gpoker_intermission" .. self:EntIndex()) then 
+            if self:GetGameState() == 0 and timer.Exists("gpoker_intermission" .. self:EntIndex()) then
                 text = math.floor(timer.TimeLeft("gpoker_intermission" .. self:EntIndex())) + 1
             else
                 text = self:GetPot() .. gPoker.betType[self:GetBetType()].fix
@@ -42,34 +42,34 @@ function ENT:Draw()
             local ang = EyeAngles()
             ang.p = 0
             ang.r = 0
-        
+
             ang:RotateAroundAxis(ang:Up(), -90)
             ang:RotateAroundAxis(ang:Forward(), 90)
-        
+
             local mult = 15
             if !ent:IsPlayer() then mult = 45 end
-        
+
             local pos = ent:EyePos() + ent:GetUp() * mult
-        
+
             cam.Start3D2D(pos, ang, 0.15)
                 surface.SetFont("gpoker_header")
-        
+
                 local key = self:getPlayerKey(ent)
                 local margin = 5
                 local nick
                 if ent:IsPlayer() then nick = ent:Nick() else nick = "[BOT] " .. ent:GetBotName() end
                 local fontW, fontH = surface.GetTextSize(nick)
                 local bgW, bgH = math.Clamp(fontW, 85, 1000) + margin * 2, fontH + margin * 2
-        
+
                 local bgClr = Color(37,37,37, 225)
                 local txtClr = Color(255,255,255,255)
                 local outClr = Color(71,133,198,255)
                 local stateClr = txtClr
-        
+
                 surface.SetFont("gpoker_text")
                 local state = ""
                 local btmTxtH = 0
-        
+
                 if self:GetGameState() > 0  then
                     if self.players[key].strength != nil then
                         state = gPoker.strength[self.players[key].strength]
@@ -79,31 +79,31 @@ function ENT:Draw()
                     else
                         state = gPoker.betType[self:GetBetType()].get(ent) .. gPoker.betType[self:GetBetType()].fix
                     end
-                
+
                     local _, btmTxtH = surface.GetTextSize(state)
                     bgH = btmTxtH + bgH
                 end
-            
-            
+
+
                 //Change opacity
                 if (self:GetWinner() > 0 and self:GetWinner() ~= key) or (self:GetGameState() > 0 and self:GetGameState() < #gPoker.gameType[self:GetGameType()].states and self:GetTurn() ~= key)  then
                     local m = 0.4
-                
+
                     bgClr = Color(bgClr.r, bgClr.g, bgClr.b, bgClr.a * m)
                     txtClr = Color(txtClr.r, txtClr.g, txtClr.b, txtClr.a * m)
                     stateClr = Color(stateClr.r, stateClr.g, stateClr.b, stateClr.a * m)
                     outClr = Color(outClr.r, outClr.g, outClr.b, outClr.a * m)
                 end
-            
+
                 if self:GetGameState() == #gPoker.gameType[self:GetGameType()].states and self:GetWinner() == key then stateClr = Color(241,241,75) end
-            
+
                 draw.NoTexture()
                 surface.SetDrawColor(bgClr:Unpack())
                 surface.DrawRect(0 - bgW/2, 0 - bgH/2, bgW, bgH)
-            
+
                 surface.SetDrawColor(outClr:Unpack())
                 surface.DrawOutlinedRect(0 - bgW/2, 0 - bgH/2, bgW, bgH, 2)
-            
+
                 draw.SimpleText(nick, "gpoker_header", 0, 0 - bgH/2 + margin, txtClr, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
                 draw.SimpleText(state, "gpoker_text", 0, 0 - bgH/2 + margin + fontH + btmTxtH/2, stateClr, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
             cam.End3D2D()
@@ -130,21 +130,21 @@ function ENT:Initialize()
                 local plyHeader = "Игроков: "
                 local startHeader = "Начальная сумма: "
                 local entryHeader = "Входная ставка: "
-        
+
                 local plyW, _ = surface.GetTextSize(plyHeader)
                 local startW, _ = surface.GetTextSize(startHeader)
                 local entryW, _ = surface.GetTextSize(entryHeader)
-        
+
                 local x, y = ScrW() / 2, ScrH() / 2
                 local bW, bH = 250, 125
                 local pad = 5
                 local _, fontH = surface.GetTextSize("W")
-        
+
                 surface.SetDrawColor(37,37,37, 225)
                 surface.DrawRect(x - bW / 2, y - bH / 2, bW, bH)
                 surface.SetDrawColor(71,133,198)
                 surface.DrawOutlinedRect(x - bW / 2, y - bH / 2, bW, bH, 2)
-        
+
                 draw.SimpleText(gPoker.gameType[self:GetGameType()].name, "gpoker_header", x, y - bH / 2 + pad, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
                 draw.SimpleText(plyHeader, "gpoker_bold", x - bW / 2 + pad, y - bH / 2 + fontH + pad + 15, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
                 draw.SimpleText("(" .. #self.players .. "/" .. self:GetMaxPlayers() .. ")", "gpoker_text", x - bW / 2 + pad + plyW, y - bH / 2 + fontH + pad + 15, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
@@ -159,7 +159,7 @@ function ENT:Initialize()
                 for k,v in pairs(ents.FindByClass("ent_poker_game")) do
                     if v:getPlayerKey(LocalPlayer()) then canJoin = false break end
                 end
-            
+
                 local text = "Нажми [" .. string.upper(input.LookupBinding("+use")) .. "] для входа."
                 if !canJoin then text = "Ты не можешь войти, пока идёт раздача." end
                 if #self.players >= self:GetMaxPlayers() and (!self:GetBotsPlaceholder()) then text = "Стол переполнен." end
@@ -280,11 +280,36 @@ end
 
 
 
-function ENT:OnRemove()
-    if IsValid(self.deckPot) then self.deckPot:Remove() end
-    if IsValid(self.dealer) then self.dealer:Remove() end
+function ENT:OnRemove(fullUpdate)
+	-- Fixes issue where record x; stop would prevent the HUD from showing up
+	-- and cause the deck/dealer chip to teleport to the map origin
+	if fullUpdate then
+        local entindex = self:EntIndex()
+        local deckpot = self.deckPot
+        local dealer = self.dealer
 
-    hook.Remove("HUDPaint", "gpoker_hudPaint" .. self:EntIndex())
+		timer.Simple( 0, function()
+            if not IsValid(self) or not IsValid(deckpot) or not IsValid(dealer) then
+                if IsValid(deckpot) then deckpot:Remove() end
+                if IsValid(dealer) then dealer:Remove() end
+                hook.Remove("HUDPaint", "gpoker_hudPaint" .. entindex)
+
+                return
+            end
+
+            self.deckPot:SetParent(self)
+            self.deckPot:SetLocalPos(self.deckPot:GetLocalPos())
+            self.deckPot:SetLocalAngles(self.deckPot:GetLocalAngles())
+
+            self.dealer:SetParent(self)
+            self.dealer:SetLocalPos(self.dealer:GetLocalPos())
+            self.dealer:SetLocalAngles(self.dealer:GetLocalAngles())
+		end )
+	else
+		if IsValid(self.deckPot) then self.deckPot:Remove() end
+		if IsValid(self.dealer) then self.dealer:Remove() end
+		hook.Remove("HUDPaint", "gpoker_hudPaint" .. self:EntIndex())
+	end
 end
 
 
@@ -347,7 +372,7 @@ function ENT:openEntryFeeDerma()
     payVal:SetText("(" .. self:GetEntryBet() .. gPoker.betType[self:GetBetType()].fix .. ")")
     surface.SetFont("gpoker_bold")
     local textW, _ = surface.GetTextSize("(" .. self:GetEntryBet() .. gPoker.betType[self:GetBetType()].fix .. ")")
-    
+
     payVal:SetPos(pay:GetWide()/2 - textW/2, pay:GetTall()/2 + 10)
 
 
@@ -427,7 +452,7 @@ function ENT:openBettingDerma(check, curbet)
                 surface.SetDrawColor(Color(37,37,37))
             end
             surface.DrawRect(0,0,w,h)
-    
+
             surface.SetDrawColor(Color(71,133,198))
             surface.DrawOutlinedRect(0,0,w,h,buttonOutline)
         end
@@ -459,7 +484,7 @@ function ENT:openBettingDerma(check, curbet)
                 surface.SetDrawColor(Color(37,37,37))
             end
             surface.DrawRect(0,0,w,h)
-    
+
             surface.SetDrawColor(Color(71,133,198))
             surface.DrawOutlinedRect(0,0,w,h,buttonOutline)
         end
@@ -488,7 +513,7 @@ function ENT:openBettingDerma(check, curbet)
                     surface.SetDrawColor(Color(37,37,37))
                 end
                 surface.DrawRect(0,0,w,h)
-        
+
                 surface.SetDrawColor(Color(71,133,198))
                 surface.DrawOutlinedRect(0,0,w,h,buttonOutline)
             end
@@ -516,7 +541,7 @@ function ENT:openBettingDerma(check, curbet)
                     surface.SetDrawColor(Color(37,37,37))
                 end
                 surface.DrawRect(0,0,w,h)
-        
+
                 surface.SetDrawColor(Color(71,133,198))
                 surface.DrawOutlinedRect(0,0,w,h,buttonOutline)
             end
@@ -545,7 +570,7 @@ function ENT:openBettingDerma(check, curbet)
                 surface.SetDrawColor(Color(37,37,37))
             end
             surface.DrawRect(0,0,w,h)
-    
+
             surface.SetDrawColor(Color(71,133,198))
             surface.DrawOutlinedRect(0,0,w,h,buttonOutline)
         end
@@ -563,7 +588,7 @@ function ENT:openBettingDerma(check, curbet)
         callVal:SetText("(" .. curbet - self.players[self:getPlayerKey(LocalPlayer())].paidBet .. gPoker.betType[self:GetBetType()].fix .. ")")
         surface.SetFont("gpoker_bold")
         local textW, _ = surface.GetTextSize("(" .. curbet - self.players[self:getPlayerKey(LocalPlayer())].paidBet .. gPoker.betType[self:GetBetType()].fix .. ")")
-        
+
         callVal:SetPos(call:GetWide()/2 - textW/2, call:GetTall()/2 + 10)
 
 
@@ -580,7 +605,7 @@ function ENT:openBettingDerma(check, curbet)
                 surface.SetDrawColor(Color(37,37,37))
             end
             surface.DrawRect(0,0,w,h)
-    
+
             surface.SetDrawColor(Color(71,133,198))
             surface.DrawOutlinedRect(0,0,w,h,buttonOutline)
         end
@@ -612,7 +637,7 @@ function ENT:openBettingDerma(check, curbet)
                 surface.SetDrawColor(Color(37,37,37))
             end
             surface.DrawRect(0,0,w,h)
-    
+
             surface.SetDrawColor(Color(71,133,198))
             surface.DrawOutlinedRect(0,0,w,h,buttonOutline)
         end
@@ -641,7 +666,7 @@ function ENT:openBettingDerma(check, curbet)
                     surface.SetDrawColor(Color(37,37,37))
                 end
                 surface.DrawRect(0,0,w,h)
-        
+
                 surface.SetDrawColor(Color(71,133,198))
                 surface.DrawOutlinedRect(0,0,w,h,buttonOutline)
             end
@@ -669,7 +694,7 @@ function ENT:openBettingDerma(check, curbet)
                     surface.SetDrawColor(Color(37,37,37))
                 end
                 surface.DrawRect(0,0,w,h)
-        
+
                 surface.SetDrawColor(Color(71,133,198))
                 surface.DrawOutlinedRect(0,0,w,h,buttonOutline)
             end
@@ -739,10 +764,10 @@ function ENT:openExchangeDerma()
 
         cards[k].DoClick = function()
             mark[k] = !mark[k]
-            if mark[k] then 
-                cards[k]:SetPos(pos[k], h/2 - (cardH/2 * 0.3) - 2.5 * (k - 1) - 10) 
-            else 
-                cards[k]:SetPos(pos[k], h/2 - (cardH/2 * 0.3) - 2.5 * (k - 1)) 
+            if mark[k] then
+                cards[k]:SetPos(pos[k], h/2 - (cardH/2 * 0.3) - 2.5 * (k - 1) - 10)
+            else
+                cards[k]:SetPos(pos[k], h/2 - (cardH/2 * 0.3) - 2.5 * (k - 1))
             end
         end
 
@@ -845,7 +870,7 @@ function ENT:openLeaveRequest()
         win:Close()
 
         if !IsValid(self) then return end
-        
+
         net.Start("gpoker_derma_leaveRequest")
             net.WriteEntity(self)
         net.SendToServer()
@@ -872,7 +897,7 @@ function ENT:openLeaveRequest()
     n.DoClick = function()
         self.leaveRequested = false
 
-        if self:GetTurn() == self:getPlayerKey(LocalPlayer()) then 
+        if self:GetTurn() == self:getPlayerKey(LocalPlayer()) then
             if gPoker.gameType[self:GetGameType()].states[self:GetGameState()].drawing then
                 self:openExchangeDerma()
             else
