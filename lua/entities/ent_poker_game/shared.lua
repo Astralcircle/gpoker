@@ -1,7 +1,7 @@
 //Basics//
 
 ENT.Type        = "anim"
-ENT.PrintName   = "GPoker Table"
+ENT.PrintName   = "GPoker"
 ENT.Spawnable   = true
 ENT.Category    = "Fun + Games"
 ENT.Base        = "base_gmodentity"
@@ -83,9 +83,9 @@ function ENT:SetupDataTables()
         //The intermission timer before/between rounds
         if new == 0 then
             timer.Create("gpoker_intermission" .. self:EntIndex(), self.intermission, 1, function()
-                if SERVER and IsValid(self) and #self.players > 1 then 
+                if SERVER and IsValid(self) and #self.players > 1 then
                     self:SetGameState(1)
-                    gPoker.gameType[self:GetGameType()].states[1].func(self) 
+                    gPoker.gameType[self:GetGameType()].states[1].func(self)
                 end
             end)
         elseif old == 0 and new == -1 then
@@ -124,7 +124,7 @@ function ENT:SetupDataTables()
         //Updating pot model
         self:NetworkVarNotify("Pot", function(ent, name, old, new)
             for i = 1, #gPoker.betType[self:GetBetType()].models do
-                if new < gPoker.betType[self:GetBetType()].models[i].val and IsValid(self.deckPot) then 
+                if new < gPoker.betType[self:GetBetType()].models[i].val and IsValid(self.deckPot) then
                     self.deckPot:SetModel(gPoker.betType[self:GetBetType()].models[i].mdl)
                     self.deckPot:SetModelScale(gPoker.betType[self:GetBetType()].models[i].scale)
                     break
@@ -141,7 +141,7 @@ function ENT:SetupDataTables()
 
                 local ang = startAngPos - (360 / #self.players) * (new - 1) + 15
                 ang = math.rad(ang)
-                
+
                 local x = math.cos(ang) * radius
                 local y = math.sin(ang) * radius
 
