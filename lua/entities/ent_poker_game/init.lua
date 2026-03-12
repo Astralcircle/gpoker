@@ -1154,7 +1154,7 @@ function ENT:finishRound()
 
         if self.players[winner] then
             local winner = Entity(self.players[winner].ind)
-            gPoker.betType[self:GetBetType()].add(winner), self:GetPot(), self)
+            gPoker.betType[self:GetBetType()].add(winner, self:GetPot(), self)
 
             if badges and IsValid(self.players[winner]) and self:getBotsAmount() == 0 then
                 winner:AddBadgeProgress("risk_taker", 1)
@@ -1290,4 +1290,5 @@ function ENT:prepareForRestart()
             gPoker.betType[self:GetBetType()].call(self, Entity(v.ind))
         end
     end
+
 end
