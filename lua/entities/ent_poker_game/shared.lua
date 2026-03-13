@@ -5,6 +5,7 @@ ENT.PrintName   = "GPoker"
 ENT.Spawnable   = true
 ENT.Category    = "Fun + Games"
 ENT.Base        = "base_gmodentity"
+ENT.DuplicatorDisabled = true
 
 //Poker info//
 

@@ -6,6 +6,7 @@ ENT.PrintName = "Bot"
 ENT.Spawnable = false
 ENT.AdminOnly = false
 ENT.Category = "Fun + Games"
+ENT.DuplicatorDisabled = true
 
 function ENT:SetupDataTables()
     self:NetworkVar("String", 0, "BotName")
