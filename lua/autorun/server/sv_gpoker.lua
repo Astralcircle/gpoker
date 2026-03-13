@@ -17,6 +17,7 @@ net.Receive("gpoker_derma_createGame", function(l, p)
     ang.p = 0
     ang.y = ang.y + 180
 
+    if hook.Run("PlayerSpawnSENT", p, "ent_poker_game") == false then return end
     local options = net.ReadTable()
 
     local poker = ents.Create("ent_poker_game")
@@ -25,6 +26,9 @@ net.Receive("gpoker_derma_createGame", function(l, p)
     poker.botsInfo = options.bot.list
     poker:Spawn()
     poker:Activate()
+
+    poker:SetCreator(p)
+    hook.Run("PlayerSpawnedSENT", p, poker)
 
     undo.Create("GPoker Table")
         undo.AddEntity(poker)
