@@ -1,5 +1,5 @@
 surface.CreateFont("gpoker_header", {
-    font = "Arial",
+	font = "Arial",
 	extended = false,
 	size = 24,
 	weight = 1000,
@@ -17,7 +17,7 @@ surface.CreateFont("gpoker_header", {
 })
 
 surface.CreateFont("gpoker_text", {
-    font = "Arial",
+	font = "Arial",
 	extended = false,
 	size = 16,
 	weight = 500,
@@ -35,7 +35,7 @@ surface.CreateFont("gpoker_text", {
 })
 
 surface.CreateFont("gpoker_bold", {
-    font = "Arial",
+	font = "Arial",
 	extended = false,
 	size = 16,
 	weight = 800,
@@ -55,454 +55,454 @@ surface.CreateFont("gpoker_bold", {
 
 
 net.Receive("gpoker_derma_createGame", function()
-    local winW, winH = 384, 216
-    local win = vgui.Create("DFrame")
-    win:SetSize(winW, winH)
-    win:Center()
-    win:SetTitle("Настройки игры")
-    win:SetDraggable(false)
-    win:MakePopup()
-
-
-    //The left twix//
-
-
-    local left = vgui.Create("DPanel", win)
-    left:SetSize(win:GetWide() * 0.25 - 15)
-    left:Dock(LEFT)
-
-    local optionsMenu = vgui.Create("DCategoryList", left)
-    optionsMenu:Dock(FILL)
-    optionsMenu:DockMargin(2, 2, 2, 2)
-
-    local options = optionsMenu:Add("Настройки")
-
-    local gameOption = options:Add("Игра")
-    local betOption = options:Add("Ставки")
-    local botOption = options:Add("Боты")
-
-    local createButton = vgui.Create("DButton", left)
-    createButton:Dock(BOTTOM)
-    createButton:DockMargin(2, 2, 2, 2)
-    createButton:SetText("Создать")
-    createButton:SetTall(createButton:GetWide())
-
-
-    //The right twix//
-
-
-    local right = vgui.Create("DPanel", win)
-    right:SetSize(win:GetWide() - left:GetWide() - 15)
-    right:Dock(RIGHT)
-
-    //Game
-
-    local gamePanel = vgui.Create("DPanel", right)
-    gamePanel:Dock(FILL)
-
-    local gameSelectText = vgui.Create("DLabel", gamePanel)
-    gameSelectText:SetColor(color_black)
-    gameSelectText:SetText("Тип игры")
-    gameSelectText:Dock(TOP)
-    gameSelectText:DockMargin(10,0,10,0)
-
-    local gameSelect = vgui.Create("DComboBox", gamePanel)
-    gameSelect:Dock(TOP)
-    gameSelect:DockMargin(10,0,10,0)
-    for i = 0, #gPoker.gameType do
-        gameSelect:AddChoice(gPoker.gameType[i].name, i, i == 0)
-    end
-
-    local maxPlyText = vgui.Create("DLabel", gamePanel)
-    maxPlyText:Dock(TOP)
-    maxPlyText:DockMargin(10,10,10,0)
-    maxPlyText:SetTextColor(color_black)
-    maxPlyText:SetText("Макс. игроков")
-
-    local maxPly = vgui.Create("DNumberWang", gamePanel)
-    maxPly:Dock(TOP)
-    maxPly:DockMargin(10,0,10,0)
-    maxPly:SetMinMax(2, 8)
-    maxPly:SetValue(4)
-
-    //Betting
-
-    local betPanel = vgui.Create("DPanel", right)
-    betPanel:Dock(FILL)
-    betPanel:Hide()
-
-    local betText = vgui.Create("DLabel", betPanel)
-    betText:Dock(TOP)
-    betText:DockMargin(10,0,10,0)
-    betText:SetTextColor(color_black)
-    betText:SetText("Тип ставки")
-
-    local betSelect = vgui.Create("DComboBox", betPanel)
-    betSelect:Dock(TOP)
-    betSelect:DockMargin(10,0,10,0)
-    for i = 0, #gPoker.betType do
-        betSelect:AddChoice(gPoker.betType[i].name, i, i == 0)
-    end
-
-    local entryFee = vgui.Create("DNumSlider", betPanel)
-    entryFee:Dock(TOP)
-    entryFee:DockMargin(10,10,10,0)
-    entryFee:SetText("Входная ставка")
-    entryFee:SetDark(true)
-    entryFee:SetDecimals(0)
-
-    local startValue = vgui.Create("DNumSlider", betPanel)
-    startValue:Dock(TOP)
-    startValue:DockMargin(10,10,10,0)
-    startValue:SetText("Начальная сумма")
-    startValue:SetDark(true)
-    startValue:SetDecimals(0)
-    startValue:SetMinMax(gPoker.betType[betSelect:GetOptionData(betSelect:GetSelectedID()) or 0].setMinMax.min, gPoker.betType[betSelect:GetOptionData(betSelect:GetSelectedID()) or 0].setMinMax.max)
-    startValue:SetValue(startValue:GetMax()/10)
-
-    if !gPoker.betType[betSelect:GetOptionData(betSelect:GetSelectedID())].canSet then startValue:Hide() end
-
-    entryFee:SetMinMax(0, gPoker.betType[betSelect:GetOptionData(betSelect:GetSelectedID())].feeMinMax.max(startValue))
-    if entryFee:GetMax() < 0 then entryFee:SetMax(0) end
-    entryFee:SetValue(entryFee:GetMax() / 10)
-
-    startValue.OnValueChanged = function()
-        entryFee:SetMax(startValue:GetValue())
-        if entryFee:GetValue() > startValue:GetValue() then entryFee:SetValue(startValue:GetValue()) end
-    end
-
-    betSelect.OnSelect = function()
-        startValue:SetMinMax(gPoker.betType[betSelect:GetOptionData(betSelect:GetSelectedID())].setMinMax.min, gPoker.betType[betSelect:GetOptionData(betSelect:GetSelectedID())].setMinMax.max)
-
-        if gPoker.betType[betSelect:GetOptionData(betSelect:GetSelectedID())].canSet then 
-            startValue:Show() 
-        else startValue:Hide() end
-
-        entryFee:SetMinMax(gPoker.betType[betSelect:GetOptionData(betSelect:GetSelectedID())].feeMinMax.min, gPoker.betType[betSelect:GetOptionData(betSelect:GetSelectedID())].feeMinMax.max(startValue))
-        if entryFee:GetValue() > entryFee:GetMax() then entryFee:SetValue(entryFee:GetMax()) end
-        entryFee:SetValue(entryFee:GetMax() / 10)
-    end
-
-    //Bots
-
-    local botPanel = vgui.Create("DPanel", right)
-    botPanel:Dock(FILL)
-    botPanel:Hide()
-
-    local placeholder = vgui.Create("DCheckBoxLabel", botPanel)
-    placeholder:Dock(TOP)
-    placeholder:DockMargin(10,2,10,0)
-    placeholder:SetText("Замена")
-    placeholder:SetTextColor(color_black)
-    placeholder:SetTooltip("Если стол заполнен, то игрок, севший за него, выкидывает бота")
-
-    local botsList = vgui.Create("DListView", botPanel)
-    botsList:Dock(TOP)
-    botsList:DockMargin(10,10,10,0)
-    botsList:SetTall(125)
-    botsList:AddColumn("Name", 1)
-    botsList:AddColumn("Model", 2)
-    botsList:AddColumn("Color", 3)
-    
-    local botAdd = vgui.Create("DButton", botPanel)
-    botAdd:Dock(LEFT)
-    botAdd:DockMargin(10,10,2,2)
-    botAdd:SetText("Добавить")
-
-    local botRemove = vgui.Create("DButton", botPanel)
-    botRemove:Dock(LEFT)
-    botRemove:DockMargin(2,10,2,2)
-    botRemove:SetText("Удалить")
-    botRemove:SetEnabled(false)
-
-    local botEdit = vgui.Create("DButton", botPanel)
-    botEdit:Dock(LEFT)
-    botEdit:DockMargin(2,10,2,2)
-    botEdit:SetText("Изменить")
-    botEdit:SetEnabled(false)
-
-    local bots = {}
-
-    botAdd.DoClick = function()
-        //We have to use this method due to #GetLines() returning the highest id instead of the amount
-        local count = 0
-        for k,v in pairs(botsList:GetLines()) do count = count + 1 end
-            
-        if count >= math.Clamp(maxPly:GetValue(), maxPly:GetMin(), maxPly:GetMax()) then return end
-
-        local max = 16 --Max amount of times we want our loop to try and find an unique name 
-        local x = 0
-        local unique = true
-        local name
-
-        repeat
-            name = table.Random(gPoker.bots.names)
-            x = x + 1
-
-            if #bots > 0 then
-                for k,v in pairs(bots) do
-                    if v.name == name then unique = false break end
-                end
-            end
-        until x >= max or unique
-
-        local mdl = table.Random(player_manager.AllValidModels())
-        local clr = Vector(math.random(0,255)/255, math.random(0,255)/255, math.random(0,255)/255)
-
-        local line = botsList:AddLine(name, mdl, Color(clr.r * 255, clr.g * 255, clr.b * 255))
-        line.OnSelect = function()
-            botRemove:SetEnabled(true)
-            botEdit:SetEnabled(true)
-        end
-
-        bots[#bots + 1] = {
-            name = name,
-            mdl = mdl,
-            clr = clr,
-            panel = line
-        }
-    end
-
-    maxPly.OnValueChanged = function()
-        if #bots > maxPly:GetValue() then
-            for i = #bots, 1, -1 do
-                if i == maxPly:GetValue() then break end
-
-                table.remove(bots, i)
-                botsList:RemoveLine(i)
-            end
-        end
-    end
-
-    botRemove.DoClick = function()
-        local selected = botsList:GetSelected()
-
-        for k,v in pairs(selected) do            
-            for key, val in pairs(bots) do
-                if val.panel == v then table.remove(bots, key) break end
-            end
-            botsList:RemoveLine(v:GetID())
-        end
-
-        botRemove:SetEnabled(false)
-        botEdit:SetEnabled(false)
-    end
-
-    botEdit.DoClick = function()
-        local selected, selectedPanel = botsList:GetSelectedLine()
-        local key = nil
-
-        for k,v in pairs(bots) do
-            if v.panel == selectedPanel then key = k break end
-        end
-
-        if key == nil then return end
-
-        local editWin = vgui.Create("DFrame")
-        editWin:SetSize(winW * 1.3, winH * 1.75)
-        editWin:Center()
-        editWin:SetTitle("Изменить бота")
-        editWin:MakePopup()
-
-        local left = vgui.Create("DPanel", editWin)
-        left:Dock(LEFT)
-        left:SetWide(editWin:GetWide()/3 * 2 - 15)
-
-        local labelName = vgui.Create("DLabel", left)
-        labelName:Dock(TOP)
-        labelName:DockMargin(10,2,10,0)
-        labelName:SetText("Имя")
-        labelName:SetTextColor(color_black)
-
-        local editName = vgui.Create("DTextEntry", left)
-        editName:Dock(TOP)
-        editName:DockMargin(10,0,10,0)
-        editName:SetText(bots[key].name)
-
-        local clrLabel = vgui.Create("DLabel", left)
-        clrLabel:Dock(TOP)
-        clrLabel:DockMargin(10,10,10,0)
-        clrLabel:SetText("Цвет")
-        clrLabel:SetTextColor(color_black)
-
-        local editClr = vgui.Create("DColorMixer", left)
-        editClr:Dock(TOP)
-        editClr:DockMargin(10,0,10,0)
-        editClr:SetColor(Color(bots[key].clr.r * 255, bots[key].clr.g * 255, bots[key].clr.b * 255))
-
-        local finish = vgui.Create("DButton", left)
-        finish:Dock(BOTTOM)
-        finish:DockMargin(100,10,100,2)
-        finish:SetText("Изменить")
-
-
-
-        local right = vgui.Create("DPanel", editWin)
-        right:Dock(RIGHT)
-        right:SetWide(editWin:GetWide() - left:GetWide() - 15)
-
-        local goddamnmodel = bots[key].mdl
-
-        local preview = vgui.Create("DModelPanel", right)
-        preview:Dock(TOP)
-        preview:SetTall(preview:GetWide() * 2)
-        preview.updateSelf = function()
-            preview:SetModel(goddamnmodel)
-
-            local bone = preview.Entity:LookupBone("ValveBiped.Bip01_Head1")
-            if bone then
-                local eyepos = preview.Entity:GetBonePosition(bone)
-                preview:SetLookAt(eyepos)
-                preview:SetCamPos(eyepos - Vector(-15, 0, 0))
-                preview.Entity:SetEyeTarget(eyepos - Vector(-15, 0, 0))
-            end
-            function preview.Entity:GetPlayerColor() return editClr:GetVector() end
-        end
-        preview.LayoutEntity = function() return end
-        preview.updateSelf()
-
-        local scroll = vgui.Create("DScrollPanel", right)
-        scroll:Dock(FILL)
-
-        local theList = vgui.Create("DIconLayout", scroll)
-        theList:Dock(FILL)
-        theList:DockMargin(2,0,0,0)
-
-        for name, model in SortedPairs(player_manager.AllValidModels()) do
-            local icon = vgui.Create("SpawnIcon", theList)
+	local winW, winH = 384, 216
+	local win = vgui.Create("DFrame")
+	win:SetSize(winW, winH)
+	win:Center()
+	win:SetTitle("Настройки игры")
+	win:SetDraggable(false)
+	win:MakePopup()
+
+
+	//The left twix//
+
+
+	local left = vgui.Create("DPanel", win)
+	left:SetSize(win:GetWide() * 0.25 - 15)
+	left:Dock(LEFT)
+
+	local optionsMenu = vgui.Create("DCategoryList", left)
+	optionsMenu:Dock(FILL)
+	optionsMenu:DockMargin(2, 2, 2, 2)
+
+	local options = optionsMenu:Add("Настройки")
+
+	local gameOption = options:Add("Игра")
+	local betOption = options:Add("Ставки")
+	local botOption = options:Add("Боты")
+
+	local createButton = vgui.Create("DButton", left)
+	createButton:Dock(BOTTOM)
+	createButton:DockMargin(2, 2, 2, 2)
+	createButton:SetText("Создать")
+	createButton:SetTall(createButton:GetWide())
+
+
+	//The right twix//
+
+
+	local right = vgui.Create("DPanel", win)
+	right:SetSize(win:GetWide() - left:GetWide() - 15)
+	right:Dock(RIGHT)
+
+	//Game
+
+	local gamePanel = vgui.Create("DPanel", right)
+	gamePanel:Dock(FILL)
+
+	local gameSelectText = vgui.Create("DLabel", gamePanel)
+	gameSelectText:SetColor(color_black)
+	gameSelectText:SetText("Тип игры")
+	gameSelectText:Dock(TOP)
+	gameSelectText:DockMargin(10,0,10,0)
+
+	local gameSelect = vgui.Create("DComboBox", gamePanel)
+	gameSelect:Dock(TOP)
+	gameSelect:DockMargin(10,0,10,0)
+	for i = 0, #gPoker.gameType do
+		gameSelect:AddChoice(gPoker.gameType[i].name, i, i == 0)
+	end
+
+	local maxPlyText = vgui.Create("DLabel", gamePanel)
+	maxPlyText:Dock(TOP)
+	maxPlyText:DockMargin(10,10,10,0)
+	maxPlyText:SetTextColor(color_black)
+	maxPlyText:SetText("Макс. игроков")
+
+	local maxPly = vgui.Create("DNumberWang", gamePanel)
+	maxPly:Dock(TOP)
+	maxPly:DockMargin(10,0,10,0)
+	maxPly:SetMinMax(2, 8)
+	maxPly:SetValue(4)
+
+	//Betting
+
+	local betPanel = vgui.Create("DPanel", right)
+	betPanel:Dock(FILL)
+	betPanel:Hide()
+
+	local betText = vgui.Create("DLabel", betPanel)
+	betText:Dock(TOP)
+	betText:DockMargin(10,0,10,0)
+	betText:SetTextColor(color_black)
+	betText:SetText("Тип ставки")
+
+	local betSelect = vgui.Create("DComboBox", betPanel)
+	betSelect:Dock(TOP)
+	betSelect:DockMargin(10,0,10,0)
+	for i = 0, #gPoker.betType do
+		betSelect:AddChoice(gPoker.betType[i].name, i, i == 0)
+	end
+
+	local entryFee = vgui.Create("DNumSlider", betPanel)
+	entryFee:Dock(TOP)
+	entryFee:DockMargin(10,10,10,0)
+	entryFee:SetText("Входная ставка")
+	entryFee:SetDark(true)
+	entryFee:SetDecimals(0)
+
+	local startValue = vgui.Create("DNumSlider", betPanel)
+	startValue:Dock(TOP)
+	startValue:DockMargin(10,10,10,0)
+	startValue:SetText("Начальная сумма")
+	startValue:SetDark(true)
+	startValue:SetDecimals(0)
+	startValue:SetMinMax(gPoker.betType[betSelect:GetOptionData(betSelect:GetSelectedID()) or 0].setMinMax.min, gPoker.betType[betSelect:GetOptionData(betSelect:GetSelectedID()) or 0].setMinMax.max)
+	startValue:SetValue(startValue:GetMax()/10)
+
+	if !gPoker.betType[betSelect:GetOptionData(betSelect:GetSelectedID())].canSet then startValue:Hide() end
+
+	entryFee:SetMinMax(0, gPoker.betType[betSelect:GetOptionData(betSelect:GetSelectedID())].feeMinMax.max(startValue))
+	if entryFee:GetMax() < 0 then entryFee:SetMax(0) end
+	entryFee:SetValue(entryFee:GetMax() / 10)
+
+	startValue.OnValueChanged = function()
+		entryFee:SetMax(startValue:GetValue())
+		if entryFee:GetValue() > startValue:GetValue() then entryFee:SetValue(startValue:GetValue()) end
+	end
+
+	betSelect.OnSelect = function()
+		startValue:SetMinMax(gPoker.betType[betSelect:GetOptionData(betSelect:GetSelectedID())].setMinMax.min, gPoker.betType[betSelect:GetOptionData(betSelect:GetSelectedID())].setMinMax.max)
+
+		if gPoker.betType[betSelect:GetOptionData(betSelect:GetSelectedID())].canSet then
+			startValue:Show()
+		else startValue:Hide() end
+
+		entryFee:SetMinMax(gPoker.betType[betSelect:GetOptionData(betSelect:GetSelectedID())].feeMinMax.min, gPoker.betType[betSelect:GetOptionData(betSelect:GetSelectedID())].feeMinMax.max(startValue))
+		if entryFee:GetValue() > entryFee:GetMax() then entryFee:SetValue(entryFee:GetMax()) end
+		entryFee:SetValue(entryFee:GetMax() / 10)
+	end
+
+	//Bots
+
+	local botPanel = vgui.Create("DPanel", right)
+	botPanel:Dock(FILL)
+	botPanel:Hide()
+
+	local placeholder = vgui.Create("DCheckBoxLabel", botPanel)
+	placeholder:Dock(TOP)
+	placeholder:DockMargin(10,2,10,0)
+	placeholder:SetText("Замена")
+	placeholder:SetTextColor(color_black)
+	placeholder:SetTooltip("Если стол заполнен, то игрок, севший за него, выкидывает бота")
+
+	local botsList = vgui.Create("DListView", botPanel)
+	botsList:Dock(TOP)
+	botsList:DockMargin(10,10,10,0)
+	botsList:SetTall(125)
+	botsList:AddColumn("Name", 1)
+	botsList:AddColumn("Model", 2)
+	botsList:AddColumn("Color", 3)
+
+	local botAdd = vgui.Create("DButton", botPanel)
+	botAdd:Dock(LEFT)
+	botAdd:DockMargin(10,10,2,2)
+	botAdd:SetText("Добавить")
+
+	local botRemove = vgui.Create("DButton", botPanel)
+	botRemove:Dock(LEFT)
+	botRemove:DockMargin(2,10,2,2)
+	botRemove:SetText("Удалить")
+	botRemove:SetEnabled(false)
+
+	local botEdit = vgui.Create("DButton", botPanel)
+	botEdit:Dock(LEFT)
+	botEdit:DockMargin(2,10,2,2)
+	botEdit:SetText("Изменить")
+	botEdit:SetEnabled(false)
+
+	local bots = {}
+
+	botAdd.DoClick = function()
+		//We have to use this method due to #GetLines() returning the highest id instead of the amount
+		local count = 0
+		for k,v in pairs(botsList:GetLines()) do count = count + 1 end
+
+		if count >= math.Clamp(maxPly:GetValue(), maxPly:GetMin(), maxPly:GetMax()) then return end
+
+		local max = 16 --Max amount of times we want our loop to try and find an unique name
+		local x = 0
+		local unique = true
+		local name
+
+		repeat
+			name = table.Random(gPoker.bots.names)
+			x = x + 1
+
+			if #bots > 0 then
+				for k,v in pairs(bots) do
+					if v.name == name then unique = false break end
+				end
+			end
+		until x >= max or unique
+
+		local mdl = table.Random(player_manager.AllValidModels())
+		local clr = Vector(math.random(0,255)/255, math.random(0,255)/255, math.random(0,255)/255)
+
+		local line = botsList:AddLine(name, mdl, Color(clr.r * 255, clr.g * 255, clr.b * 255))
+		line.OnSelect = function()
+			botRemove:SetEnabled(true)
+			botEdit:SetEnabled(true)
+		end
+
+		bots[#bots + 1] = {
+			name = name,
+			mdl = mdl,
+			clr = clr,
+			panel = line
+		}
+	end
+
+	maxPly.OnValueChanged = function()
+		if #bots > maxPly:GetValue() then
+			for i = #bots, 1, -1 do
+				if i == maxPly:GetValue() then break end
+
+				table.remove(bots, i)
+				botsList:RemoveLine(i)
+			end
+		end
+	end
+
+	botRemove.DoClick = function()
+		local selected = botsList:GetSelected()
+
+		for k,v in pairs(selected) do
+			for key, val in pairs(bots) do
+				if val.panel == v then table.remove(bots, key) break end
+			end
+			botsList:RemoveLine(v:GetID())
+		end
+
+		botRemove:SetEnabled(false)
+		botEdit:SetEnabled(false)
+	end
+
+	botEdit.DoClick = function()
+		local selected, selectedPanel = botsList:GetSelectedLine()
+		local key = nil
+
+		for k,v in pairs(bots) do
+			if v.panel == selectedPanel then key = k break end
+		end
+
+		if key == nil then return end
+
+		local editWin = vgui.Create("DFrame")
+		editWin:SetSize(winW * 1.3, winH * 1.75)
+		editWin:Center()
+		editWin:SetTitle("Изменить бота")
+		editWin:MakePopup()
+
+		local left = vgui.Create("DPanel", editWin)
+		left:Dock(LEFT)
+		left:SetWide(editWin:GetWide()/3 * 2 - 15)
+
+		local labelName = vgui.Create("DLabel", left)
+		labelName:Dock(TOP)
+		labelName:DockMargin(10,2,10,0)
+		labelName:SetText("Имя")
+		labelName:SetTextColor(color_black)
+
+		local editName = vgui.Create("DTextEntry", left)
+		editName:Dock(TOP)
+		editName:DockMargin(10,0,10,0)
+		editName:SetText(bots[key].name)
+
+		local clrLabel = vgui.Create("DLabel", left)
+		clrLabel:Dock(TOP)
+		clrLabel:DockMargin(10,10,10,0)
+		clrLabel:SetText("Цвет")
+		clrLabel:SetTextColor(color_black)
+
+		local editClr = vgui.Create("DColorMixer", left)
+		editClr:Dock(TOP)
+		editClr:DockMargin(10,0,10,0)
+		editClr:SetColor(Color(bots[key].clr.r * 255, bots[key].clr.g * 255, bots[key].clr.b * 255))
+
+		local finish = vgui.Create("DButton", left)
+		finish:Dock(BOTTOM)
+		finish:DockMargin(100,10,100,2)
+		finish:SetText("Изменить")
+
+
+
+		local right = vgui.Create("DPanel", editWin)
+		right:Dock(RIGHT)
+		right:SetWide(editWin:GetWide() - left:GetWide() - 15)
+
+		local goddamnmodel = bots[key].mdl
+
+		local preview = vgui.Create("DModelPanel", right)
+		preview:Dock(TOP)
+		preview:SetTall(preview:GetWide() * 2)
+		preview.updateSelf = function()
+			preview:SetModel(goddamnmodel)
+
+			local bone = preview.Entity:LookupBone("ValveBiped.Bip01_Head1")
+			if bone then
+				local eyepos = preview.Entity:GetBonePosition(bone)
+				preview:SetLookAt(eyepos)
+				preview:SetCamPos(eyepos - Vector(-15, 0, 0))
+				preview.Entity:SetEyeTarget(eyepos - Vector(-15, 0, 0))
+			end
+			function preview.Entity:GetPlayerColor() return editClr:GetVector() end
+		end
+		preview.LayoutEntity = function() return end
+		preview.updateSelf()
+
+		local scroll = vgui.Create("DScrollPanel", right)
+		scroll:Dock(FILL)
+
+		local theList = vgui.Create("DIconLayout", scroll)
+		theList:Dock(FILL)
+		theList:DockMargin(2,0,0,0)
+
+		for name, model in SortedPairs(player_manager.AllValidModels()) do
+			local icon = vgui.Create("SpawnIcon", theList)
 			icon:SetModel(model)
 			icon:SetSize(50, 50)
 			icon:SetTooltip(name)
-            icon.mdl = model
-            icon.DoClick = function()
-                goddamnmodel = icon.mdl
-                preview.updateSelf()
-            end
-        end
+			icon.mdl = model
+			icon.DoClick = function()
+				goddamnmodel = icon.mdl
+				preview.updateSelf()
+			end
+		end
 
-        finish.DoClick = function()
-            bots[key].name = editName:GetValue()
-            bots[key].mdl = goddamnmodel
-            bots[key].clr = Vector(editClr:GetColor().r / 255, editClr:GetColor().g / 255, editClr:GetColor().b / 255)
+		finish.DoClick = function()
+			bots[key].name = editName:GetValue()
+			bots[key].mdl = goddamnmodel
+			bots[key].clr = Vector(editClr:GetColor().r / 255, editClr:GetColor().g / 255, editClr:GetColor().b / 255)
 
-            selectedPanel:SetColumnText(1, bots[key].name)
-            selectedPanel:SetColumnText(2, bots[key].mdl)
-            selectedPanel:SetColumnText(3, Color(editClr:GetColor().r, editClr:GetColor().g, editClr:GetColor().b))
+			selectedPanel:SetColumnText(1, bots[key].name)
+			selectedPanel:SetColumnText(2, bots[key].mdl)
+			selectedPanel:SetColumnText(3, Color(editClr:GetColor().r, editClr:GetColor().g, editClr:GetColor().b))
 
-            editWin:Remove()
-        end
-    end
-
-
-    //Option clicky clicky//
+			editWin:Remove()
+		end
+	end
 
 
-    gameOption.DoClick = function()
-        gamePanel:Show()
-        betPanel:Hide()
-        botPanel:Hide()
-    end
-
-    betOption.DoClick = function()
-        gamePanel:Hide()
-        betPanel:Show()
-        botPanel:Hide()
-    end
-
-    botOption.DoClick = function()
-        gamePanel:Hide()
-        betPanel:Hide()
-        botPanel:Show()
-    end
+	//Option clicky clicky//
 
 
+	gameOption.DoClick = function()
+		gamePanel:Show()
+		betPanel:Hide()
+		botPanel:Hide()
+	end
 
-    createButton.DoClick = function()
-        for k,v in pairs(bots) do
-            v.panel = nil
-        end
+	betOption.DoClick = function()
+		gamePanel:Hide()
+		betPanel:Show()
+		botPanel:Hide()
+	end
 
-        local options = {
-            game = {
-                type    = gameSelect:GetOptionData(gameSelect:GetSelectedID()) or 0,
-                maxPly  = math.Clamp(maxPly:GetValue(), 2, 8) 
-            },
-            bet = {
-                type = betSelect:GetOptionData(betSelect:GetSelectedID()) or 0,
-                entry = math.floor(entryFee:GetValue()),
-                start = math.floor(startValue:GetValue()) or 0
-            },
-            bot = {
-                placehold = placeholder:GetChecked(),
-                list = bots
-            }
-        }
+	botOption.DoClick = function()
+		gamePanel:Hide()
+		betPanel:Hide()
+		botPanel:Show()
+	end
 
-        net.Start("gpoker_derma_createGame")
-            net.WriteTable(options)
-        net.SendToServer()
 
-        win:Remove()
-    end
+
+	createButton.DoClick = function()
+		for k,v in pairs(bots) do
+			v.panel = nil
+		end
+
+		local options = {
+			game = {
+				type    = gameSelect:GetOptionData(gameSelect:GetSelectedID()) or 0,
+				maxPly  = math.Clamp(maxPly:GetValue(), 2, 8)
+			},
+			bet = {
+				type = betSelect:GetOptionData(betSelect:GetSelectedID()) or 0,
+				entry = math.floor(entryFee:GetValue()),
+				start = math.floor(startValue:GetValue()) or 0
+			},
+			bot = {
+				placehold = placeholder:GetChecked(),
+				list = bots
+			}
+		}
+
+		net.Start("gpoker_derma_createGame")
+			net.WriteTable(options)
+		net.SendToServer()
+
+		win:Remove()
+	end
 end)
 
 
 
 net.Receive("gpoker_updatePlayers", function()
-    local ent = net.ReadEntity()
+	local ent = net.ReadEntity()
 
-    if !IsValid(ent) then return end
+	if !IsValid(ent) then return end
 
-    ent.players = net.ReadTable()
+	ent.players = net.ReadTable()
 end)
 
 
 
 net.Receive("gpoker_sendDeck", function()
-    local ent = net.ReadEntity()
-    local community = net.ReadBool()
-    local deck = net.ReadTable()
+	local ent = net.ReadEntity()
+	local community = net.ReadBool()
+	local deck = net.ReadTable()
 
-    if community then
-        ent.communityDeck = deck
-    else
-        ent.localDeck = deck
-    end
+	if community then
+		ent.communityDeck = deck
+	else
+		ent.localDeck = deck
+	end
 end)
 
 
 
 net.Receive("gpoker_payEntry", function()
-    local ent = net.ReadEntity()
+	local ent = net.ReadEntity()
 
-    if !IsValid(ent) then return else ent:openEntryFeeDerma() end
+	if !IsValid(ent) then return else ent:openEntryFeeDerma() end
 end)
 
 
 
 net.Receive("gpoker_derma_bettingActions", function()
-    local ent = net.ReadEntity()
+	local ent = net.ReadEntity()
 
-    if !IsValid(ent) then return end
-    local check = net.ReadBool()
-    local bet = net.ReadFloat()
+	if !IsValid(ent) then return end
+	local check = net.ReadBool()
+	local bet = net.ReadFloat()
 
-    ent:openBettingDerma(check, bet)
+	ent:openBettingDerma(check, bet)
 end)
 
 
 
 net.Receive("gpoker_derma_exchange", function()
-    local ent = net.ReadEntity()
+	local ent = net.ReadEntity()
 
-    if !IsValid(ent) then return end
-    ent:openExchangeDerma()
+	if !IsValid(ent) then return end
+	ent:openExchangeDerma()
 end)
 
 
 
 hook.Add("KeyPress", "gpoker_leaveRequest", function(ply, key)
-    if key == IN_USE and ply:InVehicle() and ply:GetVehicle():GetVehicleClass() == "Chair_Office2" and IsValid(ply:GetVehicle():GetParent()) and ply:GetVehicle():GetParent():GetClass() == "ent_poker_game" then
-        if LocalPlayer() == ply then ply:GetVehicle():GetParent():openLeaveRequest() end
-    end
+	if key == IN_USE and ply:InVehicle() and ply:GetVehicle():GetVehicleClass() == "Chair_Office2" and IsValid(ply:GetVehicle():GetParent()) and ply:GetVehicle():GetParent():GetClass() == "ent_poker_game" then
+		if LocalPlayer() == ply then ply:GetVehicle():GetParent():openLeaveRequest() end
+	end
 end)
