@@ -17,7 +17,7 @@ gPoker.gameType = {
         states      = {             --(NOTE: Begins AFTER the intermission timer) List of all actions
             [1] = {
                 text    = "Ставки открыты",
-                func    = function(e) if CLIENT then return end e:entryFee() end  
+                func    = function(e) if CLIENT then return end e:entryFee() end
             },
             [2] = {
                 text    = "Раздача карт...",           --Text to be displayed at the top, can also be function
@@ -76,10 +76,10 @@ gPoker.gameType = {
         }
     },
     [1] = {
-        name        = "Texas Hold'em", 
-        cardNum     = 2,           
-        cardDraw    = false,        
-        cardComm    = true,       
+        name        = "Texas Hold'em",
+        cardNum     = 2,
+        cardDraw    = false,
+        cardComm    = true,
         cardCommNum = 5,
         cardCanSee  = true,
         available   = true,
@@ -164,17 +164,61 @@ gPoker.gameType = {
 //Poker bets
 gPoker.betType = {
     [0] = {
-        name        = "Деньги",                              --Name
+        name        = "Поинты (только игроки)",                              --Name
         fix         = "$",                                  --Text after value
+        canSet      = false,  --Can players set the amount of value each player gets in the spawn derma?
+        setMinMax   = {min = 0, max = 10000},                --The minimum and maximum number of starting value (if uses)
+        feeMinMax   = {min = 0, max = function(setSlider)
+            if CLIENT then
+                return LocalPlayer():GetPoints("money")
+            end
+        end}, --The minimum and maximum of entry fee
+        get         = function(p)                           --Method for getting specified player's value
+            if !IsValid(p) then return end
+            return p:GetPoints()
+        end,
+        add         = function(p, a, e)                        --Method for adding or subtracting the value
+            if CLIENT then return end
+            if !IsValid(p) then return end
+
+            a = a or 0
+            p:AddPoints(a)
+            e:SetPot(e:GetPot() - a)
+        end,
+        call = function(s, p) --Called after player joins, mostly used for setting up custom value
+
+        end,
+        models      = {  --The spinning model at the center
+            [1] = {
+                mdl = Model("models/items/currencypack_small.mdl"), --The model, MUST be used with Model() because of CSEnt
+                val = 100, --Maximum value this model can be used with
+                scale = 0.5 --The scale of the model
+            },
+            [2] = {
+                mdl = Model("models/items/currencypack_medium.mdl"),
+                val = 1000,
+                scale = 0.5
+            },
+            [3] = {
+                mdl = Model("models/items/currencypack_large.mdl"),
+                val = 999999,
+                scale = 0.5
+            }
+        }
+    },
+
+    [1] = {
+        name        = "Фейковые деньги",                              --Name
+        fix         = "FK",                                  --Text after value
         canSet      = engine.ActiveGamemode() != "darkrp",  --Can players set the amount of value each player gets in the spawn derma?
         setMinMax   = {min = 0, max = 10000},                --The minimum and maximum number of starting value (if uses)
-        feeMinMax   = {min = 0, max = function(setSlider) 
-            if CLIENT then 
-                if engine.ActiveGamemode() != "darkrp" then 
-                    return setSlider:GetValue() 
-                else 
-                    return LocalPlayer():getDarkRPVar("money") 
-                end 
+        feeMinMax   = {min = 0, max = function(setSlider)
+            if CLIENT then
+                if engine.ActiveGamemode() != "darkrp" then
+                    return setSlider:GetValue()
+                else
+                    return LocalPlayer():getDarkRPVar("money")
+                end
             end
         end}, --The minimum and maximum of entry fee
         get         = function(p)                           --Method for getting specified player's value
@@ -201,7 +245,7 @@ gPoker.betType = {
             local isDarkRp = engine.ActiveGamemode() == "darkrp"
             a = a or 0
 
-            if !isDarkRp or (isDarkRp and !p:IsPlayer()) then 
+            if !isDarkRp or (isDarkRp and !p:IsPlayer()) then
                 local key = e:getPlayerKey(p)
                 if key == nil then return end
 
@@ -239,7 +283,7 @@ gPoker.betType = {
         }
     },
 
-    [1] = {
+    [2] = {
         name        = "Здоровье",
         fix         = "HP",
         canSet      = false,
@@ -260,18 +304,18 @@ gPoker.betType = {
         add         = function(p, a, e)
             if CLIENT then return end
             if !IsValid(p) then return end
-            
+
             a = a or 0
 
             local hp = gPoker.betType[e:GetBetType()].get(p) + a
-            
-            if hp < 1 then 
+
+            if hp < 1 then
                 e:removePlayerFromMatch(p)
                 if p:IsPlayer() then p:Kill() end
             else
-                if p:IsPlayer() then p:SetHealth(hp) else 
-                    e.players[e:getPlayerKey(p)].health = hp 
-                    e:updatePlayersTable() 
+                if p:IsPlayer() then p:SetHealth(hp) else
+                    e.players[e:getPlayerKey(p)].health = hp
+                    e:updatePlayersTable()
                 end
             end
 
@@ -377,7 +421,7 @@ end
 //Returns a fancy formatted string of deck strength
 function gPoker.fancyDeckStrength(st,vl)
     local text = ""
-    
+
     if st == 0 then
         text = "Старшая карта, " .. gPoker.rank[vl]
     elseif st == 1 then

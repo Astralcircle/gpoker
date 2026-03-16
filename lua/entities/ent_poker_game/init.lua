@@ -85,8 +85,10 @@ end
 
 //01110101 01101100 01110100 01110010 01100001 01101011 01101001 01101100 01101100
 function ENT:addBot(data)
-    local index = #self.players + 1
+    -- Disallow bots while playing for real money
+    if self:GetBetType() == 0 then return end
 
+    local index = #self.players + 1
     if index > self:GetMaxPlayers() then return end
 
     local seat = self:createSeat()
