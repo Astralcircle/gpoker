@@ -1083,6 +1083,7 @@ end
 
 if badges then
 	badges.CreateBadge("risk_taker", "Любитель риска", "Выиграйте в покер 10 раз (без ботов)", 10)
+	badges.CreateBadge("all_in", "Ва-банк", "Выиграйте 1000+ поинтов в покер за один раунд")
 end
 
 function ENT:finishRound()
@@ -1156,10 +1157,17 @@ function ENT:finishRound()
 
 		if self.players[winner] then
 			local winner = Entity(self.players[winner].ind)
-			gPoker.betType[self:GetBetType()].add(winner, self:GetPot(), self)
+			local bet_type = self:GetBetType()
+			local pot = self:GetPot()
+
+			gPoker.betType[bet_type].add(winner, pot, self)
 
 			if badges and IsValid(winner) and self:getBotsAmount() == 0 then
 				winner:AddBadgeProgress("risk_taker", 1)
+
+				if pot >= 1000 and bet_type == 0 then
+					winner:AddBadge("all_in")
+				end
 			end
 		end
 
